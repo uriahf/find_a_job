@@ -1,27 +1,40 @@
-from shiny import reactive, render, ui
-from shiny.express import input
+from shiny import App, reactive, render, ui
 import pandas as pd
 
-ui.panel_title("Find a Job")
+# ---- UI ----
+# If your Shiny version supports theming on core pages, this will work.
+# Otherwise it will be ignored; the app still runs fine.
+THEME = ui.Theme.from_brand(__file__)
 
-ui.input_action_button("refresh", "Refresh sheet")
 
+app_ui = ui.page_fluid(
+    ui.panel_title("Find a Job"),
+    ui.input_action_button("refresh", "Refresh sheet"),
+    ui.card(ui.output_table("sheet_preview")),
+    theme=THEME,  # safe even if THEME is None
+)
 
+# ---- Server ----
 CSV_URL = (
     "https://docs.google.com/spreadsheets/d/"
     "157-BXoh1_PivN28bHrDkKbwS7lnp7nknlud-d7GoQxA"
     "/export?format=csv&gid=0"
 )
 
-def load_sheet():
+def load_sheet() -> pd.DataFrame:
     return pd.read_csv(CSV_URL)
 
-@reactive.calc
-def sheet_df():
-    input.refresh()               # trigger on button click
-    reactive.invalidate_later(60) # and auto-refresh every 60s
-    return load_sheet()
+def server(input, output, session):
+    @reactive.calc
+    def sheet_df() -> pd.DataFrame:
+        # Depend on the button and auto-refresh every 60s
+        input.refresh()
+        reactive.invalidate_later(60)
+        return load_sheet()
 
-@render.table
-def sheet_preview():
-    return sheet_df()
+    @output
+    @render.table
+    def sheet_preview():
+        return sheet_df()
+
+app = App(app_ui, server)

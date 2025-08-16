@@ -9,7 +9,9 @@ dependencies = [
     "gspread-dataframe>=4.0.0",
     "jinja2>=3.1.6",
     "pandas>=2.3.1",
+    "polars>=1.32.3",
+    "pyarrow>=21.0.0",
     "reactable>=0.1.5",
-    "shiny>=1.4.0",
+    "shiny[theme]>=1.4.0",
     "shinywidgets>=0.7.0",
 ]

@@ -1,0 +1,44 @@
+meta:
+  name:
+    short: JobScout
+    full: JobScout — LinkedIn Jobs Dashboard
+
+color:
+  palette:
+    white:   "#FFFFFF"
+    black:   "#0B0F19"
+    slate-50:  "#F8FAFC"
+    slate-500: "#64748B"
+    slate-900: "#0F172A"
+    blue:    "#0A66C2"   # Primary (LinkedIn-like)
+    teal:    "#2DD4BF"
+    green:   "#16A34A"
+    amber:   "#D97706"
+    red:     "#DC2626"
+  foreground: slate-900
+  background: slate-50
+  primary: blue
+  secondary: slate-500
+  success: green
+  info: teal
+  warning: amber
+  danger: red
+  light: white
+  dark: slate-900
+
+typography:
+  fonts:
+    - family: Inter
+      source: google
+      weight: 300..800
+  base:
+    family: Inter
+    weight: 400
+    size: 16px
+    line-height: 1.55
+  headings:
+    family: Inter
+    weight: 600
+    line-height: 1.2
+    color: primary
+
