@@ -4,3 +4,4 @@ python-dotenv>=1.1.1
 pandas>=2.3.1
 shiny[theme]>=1.4.0
 google-genai>=1.30.0
+faicons>=0.2.2

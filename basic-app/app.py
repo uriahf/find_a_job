@@ -5,6 +5,7 @@ from shiny.express import input, render, ui
 from chatlas import ChatGoogle
 import pandas as pd
 from dotenv import load_dotenv
+from faicons import icon_svg
 
 # Get the directory containing app.py
 app_dir = Path(__file__).parent
@@ -13,16 +14,25 @@ env_path = app_dir / '.env'
 # Load environment variables with explicit path
 load_dotenv(env_path)
 
-# Theme setup
-THEME = ui.Theme.from_brand(__file__)
+# Theme setup 
+theme = ui.Theme().add_defaults(
+    primary="#4A90E2",  # Professional blue
+    secondary="#45B7AF",  # Teal accent
+    success="#72994E",  # Green for positive messaging
+    light="#F5F7FA",  # Light background
+)
 
 api_key = os.getenv("GOOGLE_API_KEY")
 
 
-# Chat client setup
+# Chat client setup with a fun personality
 chat_client = ChatGoogle(
     api_key=api_key,
-    system_prompt="You are a helpful job search assistant. You can analyze job listings and provide advice to job seekers."
+    system_prompt="""You are a friendly and witty job search assistant named JobBot. 
+    You can analyze job listings and provide advice to job seekers.
+    Keep your responses professional but inject appropriate humor and enthusiasm.
+    Occasionally use relevant emojis to make your messages more engaging.
+    When suggesting roles, be encouraging and highlight the positive aspects."""
 )
 
 # ---- Data Loading ----
@@ -36,22 +46,53 @@ def load_sheet() -> pd.DataFrame:
     return pd.read_csv(CSV_URL)
 
 # ---- UI ----
-ui.page_opts(title="Find a Job", theme=THEME)
+ui.page_opts(
+    title="JobBot - Your AI Job Search Assistant",
+    theme=theme,
+    fillable=True,
+    class_="bg-light"
+)
+
+# Header with fun welcome message
+with ui.card():
+    with ui.card_header(class_="bg-primary text-white d-flex align-items-center gap-2"):
+        ui.tags.i(class_="fa-solid fa-robot")
+        "JobBot - Your AI Career Companion"
 
 with ui.layout_columns(col_widths=[8, 4]):
-    # Main panel
+    # Main panel - Job Listings
     with ui.card():
-        ui.input_action_button("refresh", "Refresh sheet")
-        @render.table
+        with ui.card_header(class_="d-flex justify-content-between align-items-center"):
+            ui.h4("Available Positions")
+            ui.input_action_button(
+                "refresh", 
+                "Refresh",
+                class_="btn-secondary",
+                icon=icon_svg("arrow-rotate-right")
+            )
+        @render.data_frame
         def sheet_preview():
-            return sheet_df()
+            return render.DataGrid(
+                sheet_df(),
+                height="700px",
+                width="100%",
+                filters=True,
+                selection_mode="row",
+            )
     
     # Chat sidebar
-    with ui.card():
+    with ui.card(class_="h-100"):
+        with ui.card_header(class_="bg-secondary text-white"):
+            "Chat with JobBot"
         chat = ui.Chat("chat")
         chat.ui(
-            messages=["Hi! I can help you analyze job listings. What would you like to know?"],
-            height="600px"
+            messages=[
+                """👋 Hello! I'm JobBot, your friendly AI job search assistant!                
+                What would you like to know? 🤔"""
+            ],
+            height="650px",
+            placeholder="Ask me about the job listings...",
+            content_type="html"
         )
 
 # ---- Server ----
