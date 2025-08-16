@@ -16,6 +16,8 @@ dependencies = [
     "pyarrow>=21.0.0",
     "python-dotenv>=1.1.1",
     "reactable>=0.1.5",
+    "rsconnect-python>=1.27.1",
+    "setuptools>=80.9.0",
     "shiny[theme]>=1.4.0",
     "shinywidgets>=0.7.0",
 ]

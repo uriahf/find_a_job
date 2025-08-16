@@ -1,0 +1,6 @@
+setuptools>=69.0.0
+chatlas[google]>=0.9.2
+python-dotenv>=1.1.1
+pandas>=2.3.1
+shiny[theme]>=1.4.0
+google-genai>=1.30.0
