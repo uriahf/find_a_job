@@ -32,7 +32,14 @@ chat_client = ChatGoogle(
     You can analyze job listings and provide advice to job seekers.
     Keep your responses professional but inject appropriate humor and enthusiasm.
     Occasionally use relevant emojis to make your messages more engaging.
-    When suggesting roles, be encouraging and highlight the positive aspects."""
+    When suggesting roles, be encouraging and highlight the positive aspects.
+
+    When asked to find or filter jobs, always return a SQL query in a code block at the end
+    of your message. For example:
+    ```sql
+    SELECT * FROM jobs WHERE title LIKE '%engineer%'
+    ```
+    """
 )
 
 # ---- Data Loading ----
@@ -87,7 +94,8 @@ with ui.layout_columns(col_widths=[8, 4]):
         chat = ui.Chat("chat")
         chat.ui(
             messages=[
-                """👋 Hello! I'm JobBot, your friendly AI job search assistant!                
+                """👋 Hello! I'm JobBot, your friendly AI job search assistant! 
+               
                 What would you like to know? 🤔"""
             ],
             height="650px",
@@ -96,15 +104,55 @@ with ui.layout_columns(col_widths=[8, 4]):
         )
 
 # ---- Server ----
+current_query = reactive.value("")
+
 @reactive.calc
 def sheet_df() -> pd.DataFrame:
     input.refresh()
     reactive.invalidate_later(60)
-    return load_sheet()
+    df = load_sheet()
+    
+    # If there's a query, filter the dataframe
+    if current_query():
+        try:
+            return df.query(current_query())
+        except Exception:
+            return df
+    return df
+
+import re
 
 @chat.on_user_submit
 async def handle_chat(message: str):
-    df = sheet_df()
-    prompt = f"Given these job listings:\n\n{df.to_string()}\n\nUser question: {message}"
+    df = load_sheet()
+    prompt = f"""Given these job listings:\n\n{df.to_string()}\n\nUser question: {message}
+    
+    Remember to include a pandas query string in a code block if this is a search request."""
+    
     response = await chat_client.stream_async(prompt)
-    await chat.append_message_stream(response)
+    collected_text = ""
+    
+    async def stream_wrapper():
+        nonlocal collected_text
+        async for chunk in response:
+            collected_text += chunk
+            yield chunk
+            
+        # After streaming completes, check for SQL and update filter
+        matches = re.findall(r'```(?:sql)?\n(.+?)\n```', collected_text, re.DOTALL)
+        if matches:
+            sql = matches[-1].strip()
+            # Remove the SELECT and WHERE clauses
+            query = sql.replace('SELECT * FROM jobs WHERE ', '')
+            
+            # Handle LIKE patterns
+            if 'LIKE' in query:
+                # Extract the column name and search term
+                match = re.search(r"(\w+)\s+LIKE\s+'%([^%]+)%'", query)
+                if match:
+                    column, search_term = match.groups()
+                    # Convert to pandas string contains
+                    query = f"{column}.str.contains('{search_term}', case=False, na=False)"
+            current_query.set(query)
+    
+    await chat.append_message_stream(stream_wrapper())
